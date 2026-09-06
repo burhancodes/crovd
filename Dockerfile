@@ -25,6 +25,10 @@ COPY . .
 
 RUN sqlc generate
 
+ARG IG_CACHEBUST=static
+RUN echo "ig cachebust: ${IG_CACHEBUST}" && \
+    go run ./cmd/update-ig-constants || true
+
 RUN --mount=type=cache,target="/root/.cache/go-build" \
     CGO_ENABLED=1 go build \
         -ldflags="-s -w" \

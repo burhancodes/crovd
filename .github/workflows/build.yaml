@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 env:
@@ -23,6 +23,31 @@ jobs:
       build: ${{ steps.decide.outputs.build }}
       cachebust: ${{ steps.decide.outputs.cachebust }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Check and auto-update Instagram constants
+        id: ig_updater
+        run: |
+          go run ./cmd/update-ig-constants || true
+          if [ -n "$(git status --porcelain internal/extractors/instagram/util.go)" ]; then
+            echo "updated=true" >> "$GITHUB_OUTPUT"
+            if [ "${{ github.event_name }}" != "pull_request" ]; then
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git add internal/extractors/instagram/util.go
+              git commit -m "chore(instagram): auto-update GQL fingerprint constants"
+              git push origin HEAD:${{ github.ref_name }} || true
+            fi
+          else
+            echo "updated=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Decide Whether To Build
         id: decide
         run: |
@@ -36,14 +61,20 @@ jobs:
               echo "cachebust=manual-${{ github.run_id }}" >> "$GITHUB_OUTPUT"
               ;;
             *)
-              latest=$(docker run --rm alpine:3.22 sh -c 'apk update -q >/dev/null 2>&1; apk policy yt-dlp 2>/dev/null | grep -oE "^[0-9][^:]*" | head -1' | sed "s/-r[0-9]*$//")
-              current=$(docker run --rm ${{ env.IMAGE }} yt-dlp --version 2>/dev/null || echo "none")
-              echo "alpine edge: '$latest' / published: '$current'"
-              if [ -n "$latest" ] && [ "$latest" != "$current" ]; then
+              if [ "${{ steps.ig_updater.outputs.updated }}" = "true" ]; then
+                echo "Instagram GQL constants updated, building new image"
                 echo "build=true" >> "$GITHUB_OUTPUT"
-                echo "cachebust=$latest" >> "$GITHUB_OUTPUT"
+                echo "cachebust=ig-${{ github.run_id }}" >> "$GITHUB_OUTPUT"
               else
-                echo "build=false" >> "$GITHUB_OUTPUT"
+                latest=$(docker run --rm alpine:3.22 sh -c 'apk update -q >/dev/null 2>&1; apk policy yt-dlp 2>/dev/null | grep -oE "^[0-9][^:]*" | head -1' | sed "s/-r[0-9]*$//")
+                current=$(docker run --rm ${{ env.IMAGE }} yt-dlp --version 2>/dev/null || echo "none")
+                echo "alpine edge: '$latest' / published: '$current'"
+                if [ -n "$latest" ] && [ "$latest" != "$current" ]; then
+                  echo "build=true" >> "$GITHUB_OUTPUT"
+                  echo "cachebust=$latest" >> "$GITHUB_OUTPUT"
+                else
+                  echo "build=false" >> "$GITHUB_OUTPUT"
+                fi
               fi
               ;;
           esac
@@ -64,7 +95,16 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Update Instagram GQL Constants
+        run: |
+          go run ./cmd/update-ig-constants || true
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -88,6 +128,7 @@ jobs:
           file: ./Dockerfile
           build-args: |
             YTDLP_CACHEBUST=${{ needs.check.outputs.cachebust }}
+            IG_CACHEBUST=${{ github.run_id }}
           tags: ${{ env.IMAGE }}-${{ matrix.arch }}
 
   push-manifest:

@@ -1,6 +1,9 @@
 services:
   bot:
-    image: ghcr.io/burhancodes/crovd:main
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: ghcr.io/burhancodes/crovd:dev
     container_name: bot-dev
     restart: unless-stopped
     networks:
@@ -55,8 +58,6 @@ services:
 
 volumes:
   db:
-  go-build-cache:
-  go-mod-cache:
 
 networks:
   govd-network:

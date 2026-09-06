@@ -1,5 +1,6 @@
 services:
   bot:
+    build: .
     image: ghcr.io/burhancodes/crovd:main
     container_name: bot
     restart: unless-stopped

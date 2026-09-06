@@ -30,6 +30,7 @@ const (
 	polarisAction   = "PolarisPostActionLoadPostQueryQuery"
 
 	// GQL fingerprint constants — update these when Instagram returns 401
+	//go:generate go run ../../../cmd/update-ig-constants
 	gqlDocID        = "8845758582119845"
 	gqlRolloutHash  = "1046919575"
 	gqlBloksVersion = "394436feebb82fbc8bf09459d29e98a4182d7d9f4f36777d8278b409536b0803"
