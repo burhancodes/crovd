@@ -1,6 +1,6 @@
 services:
   bot:
-    image: crocchetto/crovd:main
+    image: ghcr.io/burhancodes/crovd:main
     container_name: bot
     restart: unless-stopped
     networks:
@@ -59,4 +59,4 @@ volumes:
 
 networks:
   govd-network:
-    driver: bridge
+    driver: bridge
