@@ -31,10 +31,10 @@ const (
 
 	// GQL fingerprint constants — update these when Instagram returns 401
 	gqlDocID        = "8845758582119845"
-	gqlRolloutHash  = "1019933358"
-	gqlBloksVersion = "6309c8d03d8a3f47a1658ba38b304a3f837142ef5f637ebf1f8f52d4b802951e"
-	gqlAsbdID       = "129477"
-	gqlHiddenState  = "20126.HYP:instagram_web_pkg.2.1...0"
+	gqlRolloutHash  = "1046919575"
+	gqlBloksVersion = "394436feebb82fbc8bf09459d29e98a4182d7d9f4f36777d8278b409536b0803"
+	gqlAsbdID       = "359341"
+	gqlHiddenState  = "20702.HYP:instagram_web_pkg.2.1...0"
 
 	igramHostname = "api-wh.igram.world"
 	igramAPIBase  = "api.igram.world"
@@ -52,7 +52,7 @@ var (
 		"Cache-Control":             "max-age=0",
 		"Dnt":                       "1",
 		"Priority":                  "u=0, i",
-		"Sec-Ch-Ua":                 `"Chromium";v="128", "Google Chrome";v="128", "Not-A.Brand";v="99"`,
+		"Sec-Ch-Ua":                 `"Chromium";v="133", "Google Chrome";v="133", "Not-A.Brand";v="99"`,
 		"Sec-Ch-Ua-Mobile":          "?0",
 		"Sec-Ch-Ua-Platform":        "\"Windows\"",
 		"Sec-Fetch-Dest":            "document",
@@ -60,7 +60,7 @@ var (
 		"Sec-Fetch-Site":            "none",
 		"Sec-Fetch-User":            "?1",
 		"Upgrade-Insecure-Requests": "1",
-		"User-Agent":                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+		"User-Agent":                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
 	}
 
 	igramHeaders = map[string]string{
@@ -422,6 +422,13 @@ func GetGQLData(ctx *models.ExtractorContext) (*GraphQLData, error) {
 	for key, value := range webHeaders {
 		graphHeaders[key] = value
 	}
+	graphHeaders["Accept"] = "*/*"
+	graphHeaders["Sec-Fetch-Dest"] = "empty"
+	graphHeaders["Sec-Fetch-Mode"] = "cors"
+	graphHeaders["Sec-Fetch-Site"] = "same-origin"
+	graphHeaders["X-Requested-With"] = "XMLHttpRequest"
+	graphHeaders["Origin"] = "https://www.instagram.com"
+	graphHeaders["Referer"] = fmt.Sprintf("https://www.instagram.com/p/%s/", ctx.ContentID)
 	resp, err := ctx.Fetch(
 		http.MethodPost,
 		graphQLEndpoint,
@@ -462,7 +469,7 @@ func BuildGQLData() (map[string]string, map[string]string, error) {
 		domain                = "www"
 		requestID             = "b"
 		clientCapabilityGrade = "EXCELLENT"
-		sessionInternalID     = "7436540909012459023"
+		sessionInternalID     = "7682474820282885466"
 		apiVersion            = "1"
 		appID                 = "936619743392459"
 		loggedIn              = "0"
