@@ -13,8 +13,7 @@ permissions:
   packages: write
 
 env:
-  IMAGE: burhancodes/${{ github.event.repository.name }}:${{ github.ref_name }}
-  GHCR_IMAGE: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.ref_name }}
+  IMAGE: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.ref_name }}
 
 jobs:
   check:
@@ -70,13 +69,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Login to Docker Hub
-        if: secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != ''
-        uses: docker/login-action@v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Log in to GitHub Container Registry (GHCR)
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v4
@@ -84,18 +76,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Determine Docker tags
-        id: tags
-        run: |
-          TAGS="${{ env.GHCR_IMAGE }}-${{ matrix.arch }}"
-          if [ -n "${{ secrets.DOCKERHUB_USERNAME }}" ] && [ -n "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
-            TAGS="${TAGS}
-          ${{ env.IMAGE }}-${{ matrix.arch }}"
-          fi
-          echo "tags<<EOF" >> "$GITHUB_OUTPUT"
-          echo "${TAGS}" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Build and push ${{ matrix.arch }} image
         uses: docker/build-push-action@v6
@@ -108,20 +88,13 @@ jobs:
           file: ./Dockerfile
           build-args: |
             YTDLP_CACHEBUST=${{ needs.check.outputs.cachebust }}
-          tags: ${{ steps.tags.outputs.tags }}
+          tags: ${{ env.IMAGE }}-${{ matrix.arch }}
 
   push-manifest:
     needs: [check, build-images]
     if: needs.check.outputs.build == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Login to Docker Hub
-        if: secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != ''
-        uses: docker/login-action@v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Log in to GitHub Container Registry (GHCR)
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v4
@@ -131,18 +104,9 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create tagged manifest
-        if: secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != ''
         uses: int128/docker-manifest-create-action@v2
         with:
           tags: ${{ env.IMAGE }}
           sources: |
             ${{ env.IMAGE }}-amd64
             ${{ env.IMAGE }}-arm64
-
-      - name: Create tagged manifest for GitHub
-        uses: int128/docker-manifest-create-action@v2
-        with:
-          tags: ${{ env.GHCR_IMAGE }}
-          sources: |
-            ${{ env.GHCR_IMAGE }}-amd64
-            ${{ env.GHCR_IMAGE }}-arm64
