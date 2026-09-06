@@ -6,6 +6,7 @@ import (
 	"maps"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/bytedance/sonic"
 	"github.com/govdbot/govd/internal/database"
@@ -40,14 +41,28 @@ var Extractor = &models.Extractor{
 				Media: media,
 			}, nil
 		}
-		// method 3: get media from 3rd party service (unlikely)
+		// method 3: get media from 3rd party service (igram)
 		media, err3 := GetIGramPost(ctx)
 		if err3 == nil {
 			return &models.ExtractorResponse{
 				Media: media,
 			}, nil
 		}
-		return nil, fmt.Errorf("all methods failed: %w; %w; %w", err1, err2, err3)
+		// method 4: get media via ddinstagram proxy
+		media, err4 := GetDDInstaMedia(ctx)
+		if err4 == nil {
+			return &models.ExtractorResponse{
+				Media: media,
+			}, nil
+		}
+		// method 5: get media via yt-dlp (native mobile api / cookies fallback)
+		media, err5 := GetYtDlpMedia(ctx)
+		if err5 == nil {
+			return &models.ExtractorResponse{
+				Media: media,
+			}, nil
+		}
+		return nil, fmt.Errorf("all methods failed: %w; %w; %w; %w; %w", err1, err2, err3, err4, err5)
 	},
 }
 
@@ -60,10 +75,28 @@ var StoriesExtractor = &models.Extractor{
 	Hidden:     true,
 
 	GetFunc: func(ctx *models.ExtractorContext) (*models.ExtractorResponse, error) {
-		media, err := GetIGramStory(ctx)
-		return &models.ExtractorResponse{
-			Media: media,
-		}, err
+		// method 1: get story from igram
+		media, err1 := GetIGramStory(ctx)
+		if err1 == nil {
+			return &models.ExtractorResponse{
+				Media: media,
+			}, nil
+		}
+		// method 2: get story via Instagram native private API (i.instagram.com)
+		media, err2 := GetNativeStory(ctx)
+		if err2 == nil {
+			return &models.ExtractorResponse{
+				Media: media,
+			}, nil
+		}
+		// method 3: get story via yt-dlp (uses instagram.txt cookies)
+		media, err3 := GetYtDlpMedia(ctx)
+		if err3 == nil {
+			return &models.ExtractorResponse{
+				Media: media,
+			}, nil
+		}
+		return nil, fmt.Errorf("all methods failed: %w; %w; %w", err1, err2, err3)
 	},
 }
 
@@ -301,3 +334,85 @@ func GetStoryFromIGram(ctx *models.ExtractorContext) (*IGramStoryResponse, error
 
 	return &story, nil
 }
+
+func GetYtDlpMedia(ctx *models.ExtractorContext) (*models.Media, error) {
+	ytURL := ctx.ContentURL
+	ytDetails, ytErr := util.GetYtDlpMetadata(ctx.Context, ytURL)
+	if ytErr != nil {
+		return nil, fmt.Errorf("yt-dlp fallback failed: %w", ytErr)
+	}
+
+	media := ctx.NewMedia()
+	media.SetCaption(ytDetails.Description)
+	if media.Caption == "" {
+		media.SetCaption(ytDetails.Title)
+	}
+
+	isPhotoPost := strings.Contains(ytURL, "/p/") || strings.Contains(ytURL, "/photo/")
+
+	var imageURLs []string
+	if isPhotoPost {
+		seenURLs := make(map[string]bool)
+		for _, t := range ytDetails.Thumbnails {
+			if t.URL == "" {
+				continue
+			}
+			cleanURL := strings.Split(t.URL, "?")[0]
+			if !seenURLs[cleanURL] {
+				seenURLs[cleanURL] = true
+				imageURLs = append(imageURLs, t.URL)
+			}
+		}
+	}
+
+	if len(imageURLs) > 0 {
+		for _, imgURL := range imageURLs {
+			item := media.NewItem()
+			item.AddFormats(&models.MediaFormat{
+				Type:     database.MediaTypePhoto,
+				FormatID: "image",
+				URL:      []string{imgURL},
+			})
+		}
+		return media, nil
+	}
+
+	var bestWidth, bestHeight int32
+	var bestBitrate int64
+	vcodec := database.MediaCodecAvc
+	acodec := database.MediaCodecAac
+	for _, f := range ytDetails.Formats {
+		parsedVCodec := util.ParseVideoCodec(f.VCodec)
+		if parsedVCodec == "" {
+			continue
+		}
+		if int64(f.Bitrate) > bestBitrate || (f.Width > bestWidth && f.Height > bestHeight) {
+			bestWidth = f.Width
+			bestHeight = f.Height
+			bestBitrate = int64(f.Bitrate)
+			vcodec = parsedVCodec
+			parsedACodec := util.ParseAudioCodec(f.ACodec)
+			if parsedACodec != "" {
+				acodec = parsedACodec
+			}
+		}
+	}
+
+	item := media.NewItem()
+	item.AddFormats(&models.MediaFormat{
+		Type:       database.MediaTypeVideo,
+		FormatID:   "ytdlp_best",
+		URL:        []string{ytURL},
+		VideoCodec: vcodec,
+		AudioCodec: acodec,
+		Width:      bestWidth,
+		Height:     bestHeight,
+		Duration:   int32(ytDetails.Duration),
+		Bitrate:    bestBitrate,
+		DownloadSettings: &models.DownloadSettings{
+			YtDlpMediaURL: ytURL,
+		},
+	})
+	return media, nil
+}
+

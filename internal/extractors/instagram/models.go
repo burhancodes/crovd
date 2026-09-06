@@ -113,6 +113,12 @@ type IGramStoryResponse struct {
 	Result []*Result `json:"result"`
 }
 
+// MediaInfoResponse maps https://i.instagram.com/api/v1/media/<id>/info/
+type MediaInfoResponse struct {
+	Items  []*Result `json:"items"`
+	Status string    `json:"status"`
+}
+
 type VideoVersions struct {
 	URL             string `json:"url"`
 	Width           int    `json:"width"`

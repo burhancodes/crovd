@@ -15,6 +15,7 @@ tmp/
 # project folders
 downloads/
 logs/
+private/cookies/*.txt
 
 # i18n translations
 translate.*.toml

@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/govdbot/govd/internal/models"
 	"github.com/govdbot/govd/internal/networking"
+	"github.com/govdbot/govd/internal/util"
 	"github.com/govdbot/govd/internal/util/download/chunked"
 	"github.com/govdbot/govd/internal/util/download/segmented"
 	"github.com/govdbot/govd/internal/util/libav"
@@ -52,6 +53,30 @@ func DownloadFile(
 
 	filePath := ToPath(fileName)
 	ctx.FilesTracker.Add(filePath)
+
+	// use yt-dlp for download when YtDlpMediaURL is set
+	if settings.YtDlpMediaURL != "" {
+		ctx.Debugf("downloading via yt-dlp: %s", settings.YtDlpMediaURL)
+		err := util.DownloadWithYtDlp(ctx.Context, settings.YtDlpMediaURL, filePath)
+		if err != nil {
+			return "", fmt.Errorf("yt-dlp download failed: %w", err)
+		}
+
+		outputPath := strings.TrimSuffix(
+			filePath,
+			filepath.Ext(filePath),
+		) + "_remuxed" + filepath.Ext(filePath)
+		ctx.FilesTracker.Add(outputPath)
+
+		err = libav.RemuxFile(filePath, outputPath)
+		if err != nil {
+			ctx.Warnf("remuxing failed, using original file: %v", err)
+			return filePath, nil
+		}
+
+		os.Rename(outputPath, filePath)
+		return filePath, nil
+	}
 
 	file, err := os.Create(filePath)
 	if err != nil {

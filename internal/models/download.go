@@ -10,4 +10,5 @@ type DownloadSettings struct {
 	DecryptionKey  *DecryptionKey
 	Retries        int
 	AvailableAt    int64
+	YtDlpMediaURL  string // when set, download via yt-dlp instead of HTTP
 }
