@@ -178,7 +178,8 @@ func parseMediaNode(media *models.Media, node *Media) error {
 		if node.Typename != "" {
 			logger.L.Warnf("unknown sidecar node typename %q, using is_video fallback", node.Typename)
 		}
-		if node.IsVideo && node.VideoURL != "" {
+		switch {
+		case node.IsVideo && node.VideoURL != "":
 			var width, height int32
 			if node.Dimensions != nil {
 				width = node.Dimensions.Width
@@ -195,14 +196,14 @@ func parseMediaNode(media *models.Media, node *Media) error {
 				Width:        width,
 				Height:       height,
 			})
-		} else if node.DisplayURL != "" {
+		case node.DisplayURL != "":
 			item := media.NewItem()
 			item.AddFormats(&models.MediaFormat{
 				FormatID: "image",
 				Type:     database.MediaTypePhoto,
 				URL:      []string{node.DisplayURL},
 			})
-		} else {
+		default:
 			logger.L.Warnf("skipping node with typename %q: no usable URL found", node.Typename)
 		}
 	}
@@ -604,7 +605,8 @@ func GetNativeStory(ctx *models.ExtractorContext) (*models.Media, error) {
 	media := ctx.NewMedia()
 	item := media.NewItem()
 
-	if len(result.VideoVersions) > 0 {
+	switch {
+	case len(result.VideoVersions) > 0:
 		video := GetBestVideoVersion(result.VideoVersions)
 		item.AddFormats(&models.MediaFormat{
 			FormatID:   "video",
@@ -615,14 +617,14 @@ func GetNativeStory(ctx *models.ExtractorContext) (*models.Media, error) {
 			Width:      int32(video.Width),
 			Height:     int32(video.Height),
 		})
-	} else if result.ImageVersions != nil && len(result.ImageVersions.Candidates) > 0 {
+	case result.ImageVersions != nil && len(result.ImageVersions.Candidates) > 0:
 		image := GetBestCandidate(result.ImageVersions.Candidates)
 		item.AddFormats(&models.MediaFormat{
 			Type:     database.MediaTypePhoto,
 			FormatID: "photo",
 			URL:      []string{image.URL},
 		})
-	} else {
+	default:
 		return nil, fmt.Errorf("no video or image found in story")
 	}
 

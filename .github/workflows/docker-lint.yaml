@@ -10,7 +10,7 @@ jobs:
   linter:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: lint Dockerfile
         uses: hadolint/hadolint-action@master

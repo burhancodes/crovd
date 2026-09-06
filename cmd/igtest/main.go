@@ -24,32 +24,32 @@ func main() {
 	logger.SetLevel(zapcore.DebugLevel)
 
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: igtest <instagram_url>")
+		logger.L.Info("Usage: igtest <instagram_url>")
 		return
 	}
 
 	url := os.Args[1]
 	ctx := extractors.FromURL(url)
 	if ctx == nil {
-		fmt.Println("RESULT: no extractor matched")
+		logger.L.Info("RESULT: no extractor matched")
 		return
 	}
-	fmt.Printf("matched extractor: %s (content id: %s)\n", ctx.Extractor.ID, ctx.ContentID)
+	logger.L.Infof("matched extractor: %s (content id: %s)", ctx.Extractor.ID, ctx.ContentID)
 
 	media, err1 := instagram.GetGQLMedia(ctx)
-	fmt.Printf("method 1 (GQL): media=%s err=%v\n", describe(media), err1)
+	logger.L.Infof("method 1 (GQL): media=%s err=%v", describe(media), err1)
 
 	media, err2 := instagram.GetEmbedMedia(ctx)
-	fmt.Printf("method 2 (embed): media=%s err=%v\n", describe(media), err2)
+	logger.L.Infof("method 2 (embed): media=%s err=%v", describe(media), err2)
 
 	media, err3 := instagram.GetIGramPost(ctx)
-	fmt.Printf("method 3 (igram): media=%s err=%v\n", describe(media), err3)
+	logger.L.Infof("method 3 (igram): media=%s err=%v", describe(media), err3)
 
 	media, err4 := instagram.GetDDInstaMedia(ctx)
-	fmt.Printf("method 4 (ddinstagram): media=%s err=%v\n", describe(media), err4)
+	logger.L.Infof("method 4 (ddinstagram): media=%s err=%v", describe(media), err4)
 
 	media, err5 := instagram.GetYtDlpMedia(ctx)
-	fmt.Printf("method 5 (yt-dlp): media=%s err=%v\n", describe(media), err5)
+	logger.L.Infof("method 5 (yt-dlp): media=%s err=%v", describe(media), err5)
 }
 
 func describe(m *models.Media) string {

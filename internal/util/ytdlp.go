@@ -2,6 +2,7 @@ package util
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -62,13 +63,14 @@ func resolveCookieArgs(urlStr string) []string {
 	}
 	cookieFile := ""
 	host := strings.ToLower(parsedURL.Host)
-	if strings.Contains(host, "youtube") || strings.Contains(host, "youtu.be") {
+	switch {
+	case strings.Contains(host, "youtube") || strings.Contains(host, "youtu.be"):
 		cookieFile = "youtube.txt"
-	} else if strings.Contains(host, "tiktok.com") {
+	case strings.Contains(host, "tiktok.com"):
 		cookieFile = "tiktok.txt"
-	} else if strings.Contains(host, "twitter.com") || strings.Contains(host, "x.com") {
+	case strings.Contains(host, "twitter.com") || strings.Contains(host, "x.com"):
 		cookieFile = "twitter.txt"
-	} else if strings.Contains(host, "instagram.com") {
+	case strings.Contains(host, "instagram.com"):
 		cookieFile = "instagram.txt"
 	}
 
@@ -97,7 +99,8 @@ func GetYtDlpMetadata(ctx context.Context, urlStr string) (*YtDlpResponse, error
 	cmd := exec.CommandContext(ctx, "yt-dlp", args...)
 	output, err := cmd.Output()
 	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
 			return nil, fmt.Errorf("yt-dlp failed: %s", string(exitErr.Stderr))
 		}
 		return nil, fmt.Errorf("failed to run yt-dlp: %w", err)

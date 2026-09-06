@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -28,17 +29,18 @@ var (
 )
 
 func main() {
-	fmt.Println("[updater] Checking latest Instagram GQL constants...")
+	log.SetFlags(0)
+	log.Println("[updater] Checking latest Instagram GQL constants...")
 
 	targetFile := findUtilFile()
 	if targetFile == "" {
-		fmt.Println("[updater] Warning: internal/extractors/instagram/util.go not found, skipping update")
+		log.Println("[updater] Warning: internal/extractors/instagram/util.go not found, skipping update")
 		return
 	}
 
 	contentBytes, err := os.ReadFile(targetFile)
 	if err != nil {
-		fmt.Printf("[updater] Warning: failed to read %s: %v\n", targetFile, err)
+		log.Printf("[updater] Warning: failed to read %s: %v\n", targetFile, err)
 		return
 	}
 	content := string(contentBytes)
@@ -58,7 +60,7 @@ func main() {
 
 	html, err := fetchInstagramHTML()
 	if err != nil {
-		fmt.Printf("[updater] Warning: could not fetch Instagram homepage: %v\n", err)
+		log.Printf("[updater] Warning: could not fetch Instagram homepage: %v\n", err)
 	} else {
 		if m := rolloutHashRegex.FindStringSubmatch(html); len(m) > 1 {
 			newRollout = m[1]
@@ -80,24 +82,24 @@ func main() {
 
 	hasChange := false
 	if newRollout != "" && newRollout != currRollout {
-		fmt.Printf("[updater] rollout_hash: %s -> %s\n", currRollout, newRollout)
+		log.Printf("[updater] rollout_hash: %s -> %s\n", currRollout, newRollout)
 		hasChange = true
 	}
 	if newHaste != "" && newHaste != currHaste {
-		fmt.Printf("[updater] haste_session: %s -> %s\n", currHaste, newHaste)
+		log.Printf("[updater] haste_session: %s -> %s\n", currHaste, newHaste)
 		hasChange = true
 	}
 	if newBloks != "" && newBloks != currBloks {
-		fmt.Printf("[updater] bloks_version: %s -> %s\n", currBloks, newBloks)
+		log.Printf("[updater] bloks_version: %s -> %s\n", currBloks, newBloks)
 		hasChange = true
 	}
 	if newAsbd != "" && newAsbd != currAsbd {
-		fmt.Printf("[updater] asbd_id: %s -> %s\n", currAsbd, newAsbd)
+		log.Printf("[updater] asbd_id: %s -> %s\n", currAsbd, newAsbd)
 		hasChange = true
 	}
 
 	if !hasChange {
-		fmt.Println("[updater] Instagram fingerprint constants are already up to date")
+		log.Println("[updater] Instagram fingerprint constants are already up to date")
 		return
 	}
 
@@ -119,10 +121,10 @@ func main() {
 	}
 
 	if err := os.WriteFile(targetFile, []byte(content), 0644); err != nil {
-		fmt.Printf("[updater] Warning: failed to write updated %s: %v\n", targetFile, err)
+		log.Printf("[updater] Warning: failed to write updated %s: %v\n", targetFile, err)
 		return
 	}
-	fmt.Printf("[updater] Successfully updated %s with latest Instagram fingerprint constants\n", targetFile)
+	log.Printf("[updater] Successfully updated %s with latest Instagram fingerprint constants\n", targetFile)
 }
 
 func extractString(re *regexp.Regexp, s string) string {
@@ -149,7 +151,7 @@ func findUtilFile() string {
 
 	dir, err := os.Getwd()
 	if err == nil {
-		for i := 0; i < 4; i++ {
+		for range 4 {
 			testPath := filepath.Join(dir, "internal/extractors/instagram/util.go")
 			if _, err := os.Stat(testPath); err == nil {
 				return testPath
