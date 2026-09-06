@@ -172,8 +172,11 @@ func parseMediaNode(media *models.Media, node *Media) error {
 		})
 
 	default:
-		// Unknown typename: use is_video + available URLs as fallback
-		logger.L.Warnf("unknown sidecar node typename %q, using is_video fallback", node.Typename)
+		// Unknown or omitted typename (embed sidecar children omit __typename entirely):
+		// use is_video + available URLs as fallback
+		if node.Typename != "" {
+			logger.L.Warnf("unknown sidecar node typename %q, using is_video fallback", node.Typename)
+		}
 		if node.IsVideo && node.VideoURL != "" {
 			var width, height int32
 			if node.Dimensions != nil {

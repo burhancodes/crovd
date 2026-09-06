@@ -15,7 +15,7 @@ import (
 func URLFilter(msg *gotgbot.Message) bool {
 	return message.Text(msg) &&
 		!message.Command(msg) &&
-		message.Entity("url")(msg)
+		(message.Entity("url")(msg) || message.Entity("text_link")(msg))
 }
 
 func URLHandler(bot *gotgbot.Bot, ctx *ext.Context) error {

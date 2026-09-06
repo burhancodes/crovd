@@ -211,14 +211,16 @@ func HasHashtagEntity(msg *gotgbot.Message, entity string) bool {
 
 func URLFromMessage(msg *gotgbot.Message) string {
 	for _, entity := range msg.Entities {
-		if entity.Type != "url" {
-			continue
+		switch entity.Type {
+		case "url":
+			parsedEntity := gotgbot.ParseEntity(
+				msg.Text,
+				entity,
+			)
+			return parsedEntity.Text
+		case "text_link":
+			return entity.Url
 		}
-		parsedEntity := gotgbot.ParseEntity(
-			msg.Text,
-			entity,
-		)
-		return parsedEntity.Text
 	}
 	return ""
 }
