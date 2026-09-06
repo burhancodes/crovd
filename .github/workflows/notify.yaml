@@ -7,6 +7,7 @@ on:
 
 jobs:
   notify:
+    if: secrets.TELEGRAM_TOKEN != '' && secrets.TELEGRAM_TO != ''
     runs-on: ubuntu-latest
     steps:
       - name: telegram notification
