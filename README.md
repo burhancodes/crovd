@@ -34,9 +34,9 @@
 * all previous ones obv
 * youtube extractor now supports yt-dlp ([how to set it up](https://github.com/crocchetto/crovd/wiki/youtube-setup))
 * supports twitter original quality for photos
-* support for xiaohongshu/rednote, hoyolab, bluesky, bilibili, miyoushe
+* support for xiaohongshu/rednote, hoyolab, bluesky, bilibili, miyoushe, skport
 * animated GIF/APNG/WEBP are now converted to MP4
-* some other fixes ([see here](https://github.com/crocchetto/crovd/wiki))
+* some other fixes ([see more](https://github.com/crocchetto/crovd/wiki))
 * [more to come..?](https://github.com/users/crocchetto/projects/3)
 
 ## getting started
