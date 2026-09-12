@@ -37,8 +37,8 @@ jobs:
               echo "cachebust=manual-${{ github.run_id }}" >> "$GITHUB_OUTPUT"
               ;;
             *)
-              latest=$(docker run --rm alpine:3.22 sh -c 'apk update -q >/dev/null 2>&1; apk policy yt-dlp 2>/dev/null | grep -oE "^[0-9][^:]*" | head -1' | sed "s/-r[0-9]*$//")
-              current=$(docker run --rm ${{ env.IMAGE }} yt-dlp --version 2>/dev/null || echo "none")
+              latest=$(docker run --rm alpine:3.22 sh -c 'apk update -q --repository="https://dl-cdn.alpinelinux.org/alpine/edge/main" --repository="https://dl-cdn.alpinelinux.org/alpine/edge/community" >/dev/null 2>&1; apk policy yt-dlp --repository="https://dl-cdn.alpinelinux.org/alpine/edge/community" 2>/dev/null | grep -oE "[0-9][0-9.]*-r[0-9]+" | sort -V | tail -1' | sed "s/-r[0-9]*$//")
+              current=$(docker run --rm --entrypoint yt-dlp ${{ env.IMAGE }} --version 2>/dev/null || echo "none")
               echo "alpine edge: '$latest' / published: '$current'"
               if [ -n "$latest" ] && [ "$latest" != "$current" ]; then
                 echo "build=true" >> "$GITHUB_OUTPUT"
