@@ -31,8 +31,8 @@ const (
 
 	igramHostname = "api-wh.igram.world"
 	igramAPIBase  = "api.igram.world"
-	igramHMACKey  = "75f2d70d3724f98e4a7d1ffd0ba9cfd907f3ae2632ee159980e2c521bff62358"
-	igramStaticTS = 1771418815381 // parseInt("mls10xp1", 36)
+	igramHMACKey  = "2fad1ac85b949ee9cfa1d828a34f0ef6df9fe343cf5a953bbcb32061aeb55fd3"
+	igramStaticTS = 1788823048233
 )
 
 var (

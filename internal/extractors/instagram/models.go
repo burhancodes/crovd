@@ -6,7 +6,27 @@ type GraphQLResponse struct {
 }
 
 type GraphQLData struct {
-	ShortcodeMedia *Media `json:"xdt_shortcode_media"`
+	ShortcodeMedia *Media       `json:"xdt_shortcode_media"`
+	WebInfo        *V1MediaInfo `json:"xdt_api__v1__media__shortcode__web_info"`
+}
+
+type V1MediaInfo struct {
+	Items []*V1Item `json:"items"`
+}
+
+type V1Item struct {
+	Code           string           `json:"code"`
+	MediaType      int              `json:"media_type"`
+	ImageVersions  *ImageVersions   `json:"image_versions2"`
+	VideoVersions  []*VideoVersions `json:"video_versions"`
+	CarouselMedia  []*V1Item        `json:"carousel_media"`
+	OriginalWidth  int32            `json:"original_width"`
+	OriginalHeight int32            `json:"original_height"`
+	Caption        *V1Caption       `json:"caption"`
+}
+
+type V1Caption struct {
+	Text string `json:"text"`
 }
 
 type ContextJSON struct {
