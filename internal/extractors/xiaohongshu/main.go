@@ -18,8 +18,9 @@ var ShortExtractor = &models.Extractor{
 	URLPattern: regexp.MustCompile(
 		`https?://xhslink\.com/(?:[a-zA-Z]/)?(?P<id>[a-zA-Z0-9]+)`,
 	),
-	Host:     []string{"xhslink"},
-	Redirect: true,
+	Host:        []string{"xhslink"},
+	Redirect:    true,
+	Impersonate: true,
 
 	GetFunc: func(ctx *models.ExtractorContext) (*models.ExtractorResponse, error) {
 		redirectURL, err := ctx.FetchLocation(ctx.ContentURL, nil)
@@ -54,7 +55,8 @@ var Extractor = &models.Extractor{
 	URLPattern: regexp.MustCompile(
 		`https?://(?:www\.)?xiaohongshu\.com/(?:explore|discovery/item)/(?P<id>[a-zA-Z0-9]+)(?:\?(?P<xsec_token>xsec_token=[^&\s]+).*)?`,
 	),
-	Host: []string{"xiaohongshu"},
+	Host:        []string{"xiaohongshu"},
+	Impersonate: true,
 
 	GetFunc: func(ctx *models.ExtractorContext) (*models.ExtractorResponse, error) {
 		media, err := GetMedia(ctx)
