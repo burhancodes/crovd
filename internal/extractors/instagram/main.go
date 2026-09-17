@@ -15,13 +15,13 @@ import (
 	"github.com/govdbot/govd/internal/util"
 )
 
-var instagramHost = []string{"instagram", "ddinstagram"}
+var instagramHost = []string{"instagram", "ddinstagram", "kkinstagram"}
 
 var Extractor = &models.Extractor{
 	ID:          "instagram",
 	DisplayName: "Instagram",
 
-	URLPattern: regexp.MustCompile(`https:\/\/(www\.)?(?:dd)?instagram\.com\/(reels?|p|tv)\/(?P<id>[a-zA-Z0-9_-]+)`),
+	URLPattern: regexp.MustCompile(`https:\/\/(www\.)?(?:dd|kk)?instagram\.com\/(?:[a-zA-Z0-9_.]+\/)?(reels?|p|tv)\/(?P<id>[a-zA-Z0-9_-]+)`),
 	Host:       instagramHost,
 	Redirect:   false,
 
@@ -55,7 +55,7 @@ var StoriesExtractor = &models.Extractor{
 	ID:          "instagram",
 	DisplayName: "Instagram Stories",
 
-	URLPattern: regexp.MustCompile(`https:\/\/(www\.)?(?:dd)?instagram\.com\/stories\/[a-zA-Z0-9._]+\/(?P<id>\d+)`),
+	URLPattern: regexp.MustCompile(`https:\/\/(www\.)?(?:dd|kk)?instagram\.com\/stories\/[a-zA-Z0-9._]+\/(?P<id>\d+)`),
 	Host:       instagramHost,
 	Hidden:     true,
 
@@ -71,7 +71,7 @@ var ShareURLExtractor = &models.Extractor{
 	ID:          "instagram",
 	DisplayName: "Instagram (Share)",
 
-	URLPattern: regexp.MustCompile(`https?:\/\/(www\.)?(?:dd)?instagram\.com\/share\/((reels?|video|s|p)\/)?(?P<id>[^\/\?]+)`),
+	URLPattern: regexp.MustCompile(`https?:\/\/(www\.)?(?:dd|kk)?instagram\.com\/share\/((reels?|video|s|p)\/)?(?P<id>[^\/\?]+)`),
 	Host:       instagramHost,
 
 	Redirect: true,
