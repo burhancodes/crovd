@@ -12,7 +12,7 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/crocchetto/crovd?style=flat-square" alt="license"></a>
   <a href="https://github.com/crocchetto/crovd/stargazers"><img src="https://img.shields.io/github/stars/crocchetto/crovd?style=flat-square" alt="stars"></a>
-  <img src="https://img.shields.io/badge/docker-ready-blue?style=flat-square" alt="docker">
+  <a href="https://hub.docker.com/r/crocchetto/crovd"><img src="https://img.shields.io/badge/docker-ready-blue?style=flat-square" alt="docker"></a>
   <a href="https://t.me/crovd_bot"><img src="https://img.shields.io/badge/telegram-@crovd__bot-2CA5E0?style=flat-square&logo=telegram" alt="telegram"></a>
 </p>
 
@@ -34,9 +34,9 @@
 * all previous ones obv
 * youtube extractor now supports yt-dlp ([how to set it up](https://github.com/crocchetto/crovd/wiki/youtube-setup))
 * supports twitter original quality for photos
-* support for xiaohongshu/rednote, hoyolab, bluesky, bilibili, miyoushe
+* support for xiaohongshu/rednote, hoyolab, bluesky, bilibili, miyoushe, skport
 * animated GIF/APNG/WEBP are now converted to MP4
-* some other fixes ([see here](https://github.com/crocchetto/crovd/wiki))
+* some other fixes ([see more](https://github.com/crocchetto/crovd/wiki))
 * [more to come..?](https://github.com/users/crocchetto/projects/3)
 
 ## getting started

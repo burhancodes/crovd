@@ -51,7 +51,7 @@ type ExtractorConfig struct {
 	EdgeProxy     string           `yaml:"edge_proxy"`
 	DisableProxy  bool             `yaml:"disable_proxy"`
 	IgnoreRegex   []*regexp.Regexp `yaml:"ignore_regex"`
-	Impersonate   bool             `yaml:"impersonate"`
+	Impersonate   *bool            `yaml:"impersonate"`
 	IsDisabled    bool             `yaml:"disabled"`
 	Instance      []string         `yaml:"instance"`
 	Backends      []string         `yaml:"backends"`

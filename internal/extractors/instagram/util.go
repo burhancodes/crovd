@@ -32,7 +32,6 @@ const (
 	gqlBloksVersion = "9887f81ded219a1a7b9abbe1fa856a213108391d81051955946cfc701a0dd354"
 	gqlAsbdID       = "359341"
 	gqlHiddenState  = "20715.HYP:instagram_web_pkg.2.1...0"
-
 )
 
 var (

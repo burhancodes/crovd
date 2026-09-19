@@ -19,8 +19,9 @@ type Extractor struct {
 	URLPattern *regexp.Regexp
 	Host       []string
 
-	Hidden   bool
-	Redirect bool
+	Hidden      bool
+	Redirect    bool
+	Impersonate bool
 
 	GetFunc func(*ExtractorContext) (*ExtractorResponse, error)
 }

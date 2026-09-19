@@ -66,8 +66,8 @@ jobs:
                 echo "build=true" >> "$GITHUB_OUTPUT"
                 echo "cachebust=ig-${{ github.run_id }}" >> "$GITHUB_OUTPUT"
               else
-                latest=$(docker run --rm alpine:3.22 sh -c 'apk update -q >/dev/null 2>&1; apk policy yt-dlp 2>/dev/null | grep -oE "^[0-9][^:]*" | head -1' | sed "s/-r[0-9]*$//")
-                current=$(docker run --rm ${{ env.IMAGE }} yt-dlp --version 2>/dev/null || echo "none")
+                latest=$(docker run --rm alpine:3.22 sh -c 'apk update -q --repository="https://dl-cdn.alpinelinux.org/alpine/edge/main" --repository="https://dl-cdn.alpinelinux.org/alpine/edge/community" >/dev/null 2>&1; apk policy yt-dlp --repository="https://dl-cdn.alpinelinux.org/alpine/edge/community" 2>/dev/null | grep -oE "[0-9][0-9.]*-r[0-9]+" | sort -V | tail -1' | sed "s/-r[0-9]*$//")
+                current=$(docker run --rm --entrypoint yt-dlp ${{ env.IMAGE }} --version 2>/dev/null || echo "none")
                 echo "alpine edge: '$latest' / published: '$current'"
                 if [ -n "$latest" ] && [ "$latest" != "$current" ]; then
                   echo "build=true" >> "$GITHUB_OUTPUT"
@@ -118,7 +118,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push ${{ matrix.arch }} image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           cache-from: type=gha,scope=${{ matrix.arch }}
           cache-to: type=gha,mode=max,scope=${{ matrix.arch }}

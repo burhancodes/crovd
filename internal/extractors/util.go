@@ -13,6 +13,13 @@ import (
 
 const maxRedirects = 5
 
+func resolveImpersonate(cfg *config.ExtractorConfig, extractor *models.Extractor) bool {
+	if cfg != nil && cfg.Impersonate != nil {
+		return *cfg.Impersonate
+	}
+	return extractor.Impersonate
+}
+
 var extractorsByHost = getExtractorsMap()
 
 func FromURL(url string) *models.ExtractorContext {
@@ -88,7 +95,7 @@ func FromURL(url string) *models.ExtractorContext {
 					DownloadProxy: cfg.DownloadProxy,
 					Proxy:         cfg.Proxy,
 					DisableProxy:  cfg.DisableProxy,
-					Impersonate:   cfg.Impersonate,
+					Impersonate:   resolveImpersonate(cfg, extractor),
 				},
 			),
 		}
