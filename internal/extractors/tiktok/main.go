@@ -7,6 +7,7 @@ import (
 	"regexp"
 
 	"github.com/govdbot/govd/internal/database"
+	"github.com/govdbot/govd/internal/extractors/raiden"
 	"github.com/govdbot/govd/internal/models"
 	"github.com/govdbot/govd/internal/util"
 )
@@ -54,13 +55,21 @@ var Extractor = &models.Extractor{
 
 	GetFunc: func(ctx *models.ExtractorContext) (*models.ExtractorResponse, error) {
 		media, err := GetMedia(ctx)
-		if err != nil {
-			return nil, err
+		if err == nil {
+			return &models.ExtractorResponse{
+				URL:   ctx.ContentURL,
+				Media: media,
+			}, nil
 		}
-		return &models.ExtractorResponse{
-			URL:   ctx.ContentURL,
-			Media: media,
-		}, nil
+		// fallback: raiden api
+		raidenMedia, raidenErr := raiden.FetchMedia(ctx, raiden.RouteTikTok, ctx.ContentURL)
+		if raidenErr == nil {
+			return &models.ExtractorResponse{
+				URL:   ctx.ContentURL,
+				Media: raidenMedia,
+			}, nil
+		}
+		return nil, fmt.Errorf("tiktok extraction failed: %w; raiden fallback failed: %w", err, raidenErr)
 	},
 }
 

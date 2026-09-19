@@ -3,6 +3,7 @@ package extractors
 import (
 	"github.com/govdbot/govd/internal/extractors/bilibili"
 	"github.com/govdbot/govd/internal/extractors/bluesky"
+	"github.com/govdbot/govd/internal/extractors/douyin"
 	"github.com/govdbot/govd/internal/extractors/facebook"
 	"github.com/govdbot/govd/internal/extractors/hoyolab"
 	"github.com/govdbot/govd/internal/extractors/instagram"
@@ -10,6 +11,7 @@ import (
 	"github.com/govdbot/govd/internal/extractors/ninegag"
 	"github.com/govdbot/govd/internal/extractors/pinterest"
 	"github.com/govdbot/govd/internal/extractors/reddit"
+	"github.com/govdbot/govd/internal/extractors/snapchat"
 	"github.com/govdbot/govd/internal/extractors/soundcloud"
 	"github.com/govdbot/govd/internal/extractors/threads"
 	"github.com/govdbot/govd/internal/extractors/tiktok"
@@ -38,6 +40,10 @@ var Extractors = []*models.Extractor{
 	reddit.Extractor,
 	reddit.ShortExtractor,
 	threads.Extractor,
+	snapchat.ShortExtractor,
+	snapchat.Extractor,
+	douyin.ShortExtractor,
+	douyin.Extractor,
 	xiaohongshu.Extractor,
 	xiaohongshu.ShortExtractor,
 	hoyolab.Extractor,

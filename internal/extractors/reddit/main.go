@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"regexp"
 
+	"github.com/bytedance/sonic"
 	"github.com/govdbot/govd/internal/database"
+	"github.com/govdbot/govd/internal/extractors/raiden"
 	"github.com/govdbot/govd/internal/logger"
 	"github.com/govdbot/govd/internal/models"
 	"github.com/govdbot/govd/internal/util"
-
-	"github.com/bytedance/sonic"
 )
 
 var baseHost = []string{"reddit", "redditmedia.com"}
@@ -52,12 +52,22 @@ var Extractor = &models.Extractor{
 
 	GetFunc: func(ctx *models.ExtractorContext) (*models.ExtractorResponse, error) {
 		media, err := MediaFromAPI(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get media: %w", err)
+		if err == nil && media != nil {
+			return &models.ExtractorResponse{
+				Media: media,
+			}, nil
 		}
-		return &models.ExtractorResponse{
-			Media: media,
-		}, nil
+		// fallback: raiden api
+		raidenMedia, raidenErr := raiden.FetchMedia(ctx, raiden.RouteReddit, ctx.ContentURL)
+		if raidenErr == nil {
+			return &models.ExtractorResponse{
+				Media: raidenMedia,
+			}, nil
+		}
+		if err != nil {
+			return nil, fmt.Errorf("reddit extraction failed: %w; raiden fallback failed: %w", err, raidenErr)
+		}
+		return nil, fmt.Errorf("no media found: %w", raidenErr)
 	},
 }
 

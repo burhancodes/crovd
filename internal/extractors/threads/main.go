@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"regexp"
 
+	"github.com/govdbot/govd/internal/extractors/raiden"
 	"github.com/govdbot/govd/internal/logger"
 	"github.com/govdbot/govd/internal/models"
 	"github.com/govdbot/govd/internal/networking"
@@ -20,10 +21,15 @@ var Extractor = &models.Extractor{
 
 	GetFunc: func(ctx *models.ExtractorContext) (*models.ExtractorResponse, error) {
 		media, err := GetEmbedMedia(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get media: %w", err)
+		if err == nil {
+			return &models.ExtractorResponse{Media: media}, nil
 		}
-		return &models.ExtractorResponse{Media: media}, nil
+		// fallback: raiden api
+		raidenMedia, raidenErr := raiden.FetchMedia(ctx, raiden.RouteThreads, ctx.ContentURL)
+		if raidenErr == nil {
+			return &models.ExtractorResponse{Media: raidenMedia}, nil
+		}
+		return nil, fmt.Errorf("threads embed failed: %w; raiden fallback failed: %w", err, raidenErr)
 	},
 }
 

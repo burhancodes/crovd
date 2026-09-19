@@ -10,6 +10,7 @@ import (
 
 	"github.com/bytedance/sonic"
 	"github.com/govdbot/govd/internal/database"
+	"github.com/govdbot/govd/internal/extractors/raiden"
 	"github.com/govdbot/govd/internal/logger"
 	"github.com/govdbot/govd/internal/models"
 	"github.com/govdbot/govd/internal/networking"
@@ -41,28 +42,35 @@ var Extractor = &models.Extractor{
 				Media: media,
 			}, nil
 		}
-		// method 3: get media from 3rd party service (igram)
-		media, err3 := GetIGramPost(ctx)
+		// method 3: get media from 3rd party service (raidenapi - main fallback)
+		media, err3 := GetRaidenMedia(ctx)
 		if err3 == nil {
 			return &models.ExtractorResponse{
 				Media: media,
 			}, nil
 		}
-		// method 4: get media via ddinstagram proxy
-		media, err4 := GetDDInstaMedia(ctx)
+		// method 4: get media from 3rd party service (igram)
+		media, err4 := GetIGramPost(ctx)
 		if err4 == nil {
 			return &models.ExtractorResponse{
 				Media: media,
 			}, nil
 		}
-		// method 5: get media via yt-dlp (native mobile api / cookies fallback)
-		media, err5 := GetYtDlpMedia(ctx)
+		// method 5: get media via ddinstagram proxy
+		media, err5 := GetDDInstaMedia(ctx)
 		if err5 == nil {
 			return &models.ExtractorResponse{
 				Media: media,
 			}, nil
 		}
-		return nil, fmt.Errorf("all methods failed: %w; %w; %w; %w; %w", err1, err2, err3, err4, err5)
+		// method 6: get media via yt-dlp (native mobile api / cookies fallback)
+		media, err6 := GetYtDlpMedia(ctx)
+		if err6 == nil {
+			return &models.ExtractorResponse{
+				Media: media,
+			}, nil
+		}
+		return nil, fmt.Errorf("all methods failed: %w; %w; %w; %w; %w; %w", err1, err2, err3, err4, err5, err6)
 	},
 }
 
@@ -75,28 +83,35 @@ var StoriesExtractor = &models.Extractor{
 	Hidden:     true,
 
 	GetFunc: func(ctx *models.ExtractorContext) (*models.ExtractorResponse, error) {
-		// method 1: get story from igram
-		media, err1 := GetIGramStory(ctx)
+		// method 1: get story via raidenapi
+		media, err1 := GetRaidenMedia(ctx)
 		if err1 == nil {
 			return &models.ExtractorResponse{
 				Media: media,
 			}, nil
 		}
-		// method 2: get story via Instagram native private API (i.instagram.com)
-		media, err2 := GetNativeStory(ctx)
+		// method 2: get story from igram
+		media, err2 := GetIGramStory(ctx)
 		if err2 == nil {
 			return &models.ExtractorResponse{
 				Media: media,
 			}, nil
 		}
-		// method 3: get story via yt-dlp (uses instagram.txt cookies)
-		media, err3 := GetYtDlpMedia(ctx)
+		// method 3: get story via Instagram native private API (i.instagram.com)
+		media, err3 := GetNativeStory(ctx)
 		if err3 == nil {
 			return &models.ExtractorResponse{
 				Media: media,
 			}, nil
 		}
-		return nil, fmt.Errorf("all methods failed: %w; %w; %w", err1, err2, err3)
+		// method 4: get story via yt-dlp (uses instagram.txt cookies)
+		media, err4 := GetYtDlpMedia(ctx)
+		if err4 == nil {
+			return &models.ExtractorResponse{
+				Media: media,
+			}, nil
+		}
+		return nil, fmt.Errorf("all methods failed: %w; %w; %w; %w", err1, err2, err3, err4)
 	},
 }
 
@@ -248,6 +263,14 @@ func GetIGramStory(ctx *models.ExtractorContext) (*models.Media, error) {
 	}
 
 	return media, nil
+}
+
+func GetRaidenMedia(ctx *models.ExtractorContext) (*models.Media, error) {
+	contentURL := fmt.Sprintf("https://www.instagram.com/p/%s/", ctx.ContentID)
+	if strings.Contains(ctx.ContentURL, "/stories/") {
+		contentURL = strings.Replace(ctx.ContentURL, "ddinstagram.com", "instagram.com", 1)
+	}
+	return raiden.FetchMedia(ctx, raiden.RouteInstagram, contentURL)
 }
 
 func GetPostFromIGram(ctx *models.ExtractorContext) (*IGramResponse, error) {

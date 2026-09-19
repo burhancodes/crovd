@@ -6,13 +6,13 @@ import (
 	"net/http"
 	"regexp"
 
+	"github.com/bytedance/sonic"
 	"github.com/govdbot/govd/internal/database"
+	"github.com/govdbot/govd/internal/extractors/raiden"
+	"github.com/govdbot/govd/internal/logger"
 	"github.com/govdbot/govd/internal/models"
 	"github.com/govdbot/govd/internal/networking"
 	"github.com/govdbot/govd/internal/util"
-
-	"github.com/bytedance/sonic"
-	"github.com/govdbot/govd/internal/logger"
 )
 
 const (
@@ -72,12 +72,23 @@ var Extractor = &models.Extractor{
 
 	GetFunc: func(ctx *models.ExtractorContext) (*models.ExtractorResponse, error) {
 		media, err := MediaFromAPI(ctx)
-		if err != nil {
-			return nil, err
+		if err == nil && media != nil {
+			return &models.ExtractorResponse{
+				Media: media,
+			}, nil
 		}
-		return &models.ExtractorResponse{
-			Media: media,
-		}, nil
+		// fallback: raiden api
+		targetURL := fmt.Sprintf("https://x.com/i/status/%s", ctx.ContentID)
+		raidenMedia, raidenErr := raiden.FetchMedia(ctx, raiden.RouteX, targetURL)
+		if raidenErr == nil {
+			return &models.ExtractorResponse{
+				Media: raidenMedia,
+			}, nil
+		}
+		if err != nil {
+			return nil, fmt.Errorf("twitter extraction failed: %w; raiden fallback failed: %w", err, raidenErr)
+		}
+		return nil, fmt.Errorf("no media found: %w", raidenErr)
 	},
 }
 

@@ -42,14 +42,17 @@ func main() {
 	media, err2 := instagram.GetEmbedMedia(ctx)
 	logger.L.Infof("method 2 (embed): media=%s err=%v", describe(media), err2)
 
-	media, err3 := instagram.GetIGramPost(ctx)
-	logger.L.Infof("method 3 (igram): media=%s err=%v", describe(media), err3)
+	media, err3 := instagram.GetRaidenMedia(ctx)
+	logger.L.Infof("method 3 (raiden): media=%s err=%v", describe(media), err3)
 
-	media, err4 := instagram.GetDDInstaMedia(ctx)
-	logger.L.Infof("method 4 (ddinstagram): media=%s err=%v", describe(media), err4)
+	media, err4 := instagram.GetIGramPost(ctx)
+	logger.L.Infof("method 4 (igram): media=%s err=%v", describe(media), err4)
 
-	media, err5 := instagram.GetYtDlpMedia(ctx)
-	logger.L.Infof("method 5 (yt-dlp): media=%s err=%v", describe(media), err5)
+	media, err5 := instagram.GetDDInstaMedia(ctx)
+	logger.L.Infof("method 5 (ddinstagram): media=%s err=%v", describe(media), err5)
+
+	media, err6 := instagram.GetYtDlpMedia(ctx)
+	logger.L.Infof("method 6 (yt-dlp): media=%s err=%v", describe(media), err6)
 }
 
 func describe(m *models.Media) string {
