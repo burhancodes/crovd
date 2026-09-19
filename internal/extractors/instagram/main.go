@@ -3,12 +3,9 @@ package instagram
 import (
 	"fmt"
 	"io"
-	"maps"
 	"net/http"
 	"regexp"
 	"strings"
-
-	"github.com/bytedance/sonic"
 	"github.com/govdbot/govd/internal/database"
 	"github.com/govdbot/govd/internal/extractors/raiden"
 	"github.com/govdbot/govd/internal/logger"
@@ -17,7 +14,7 @@ import (
 	"github.com/govdbot/govd/internal/util"
 )
 
-var instagramHost = []string{"instagram", "ddinstagram"}
+var instagramHost = []string{"instagram"}
 
 var Extractor = &models.Extractor{
 	ID:          "instagram",
@@ -49,28 +46,14 @@ var Extractor = &models.Extractor{
 				Media: media,
 			}, nil
 		}
-		// method 4: get media from 3rd party service (igram)
-		media, err4 := GetIGramPost(ctx)
+		// method 4: get media via yt-dlp (native mobile api / cookies fallback)
+		media, err4 := GetYtDlpMedia(ctx)
 		if err4 == nil {
 			return &models.ExtractorResponse{
 				Media: media,
 			}, nil
 		}
-		// method 5: get media via ddinstagram proxy
-		media, err5 := GetDDInstaMedia(ctx)
-		if err5 == nil {
-			return &models.ExtractorResponse{
-				Media: media,
-			}, nil
-		}
-		// method 6: get media via yt-dlp (native mobile api / cookies fallback)
-		media, err6 := GetYtDlpMedia(ctx)
-		if err6 == nil {
-			return &models.ExtractorResponse{
-				Media: media,
-			}, nil
-		}
-		return nil, fmt.Errorf("all methods failed: %w; %w; %w; %w; %w; %w", err1, err2, err3, err4, err5, err6)
+		return nil, fmt.Errorf("all methods failed: %w; %w; %w; %w", err1, err2, err3, err4)
 	},
 }
 
@@ -90,28 +73,21 @@ var StoriesExtractor = &models.Extractor{
 				Media: media,
 			}, nil
 		}
-		// method 2: get story from igram
-		media, err2 := GetIGramStory(ctx)
+		// method 2: get story via Instagram native private API (i.instagram.com)
+		media, err2 := GetNativeStory(ctx)
 		if err2 == nil {
 			return &models.ExtractorResponse{
 				Media: media,
 			}, nil
 		}
-		// method 3: get story via Instagram native private API (i.instagram.com)
-		media, err3 := GetNativeStory(ctx)
+		// method 3: get story via yt-dlp (uses instagram.txt cookies)
+		media, err3 := GetYtDlpMedia(ctx)
 		if err3 == nil {
 			return &models.ExtractorResponse{
 				Media: media,
 			}, nil
 		}
-		// method 4: get story via yt-dlp (uses instagram.txt cookies)
-		media, err4 := GetYtDlpMedia(ctx)
-		if err4 == nil {
-			return &models.ExtractorResponse{
-				Media: media,
-			}, nil
-		}
-		return nil, fmt.Errorf("all methods failed: %w; %w; %w; %w", err1, err2, err3, err4)
+		return nil, fmt.Errorf("all methods failed: %w; %w; %w", err1, err2, err3)
 	},
 }
 
@@ -174,188 +150,12 @@ func GetEmbedMedia(ctx *models.ExtractorContext) (*models.Media, error) {
 	return ParseGQLMedia(ctx, graphData)
 }
 
-func GetIGramPost(ctx *models.ExtractorContext) (*models.Media, error) {
-	details, err := GetPostFromIGram(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get post: %w", err)
-	}
-
-	media := ctx.NewMedia()
-	for _, obj := range details.Items {
-		item := media.NewItem()
-		if len(obj.URL) == 0 {
-			return nil, fmt.Errorf("no media url found")
-		}
-		urlObj := obj.URL[0]
-		contentURL, err := GetCDNURL(urlObj.URL)
-		if err != nil {
-			return nil, err
-		}
-		thumbnailURL, err := GetCDNURL(obj.Thumb)
-		if err != nil {
-			return nil, err
-		}
-		fileExt := urlObj.Ext
-		formatID := urlObj.Type
-		switch fileExt {
-		case "mp4":
-			item.AddFormats(&models.MediaFormat{
-				FormatID:     formatID,
-				Type:         database.MediaTypeVideo,
-				URL:          []string{contentURL},
-				VideoCodec:   database.MediaCodecAvc,
-				AudioCodec:   database.MediaCodecAac,
-				ThumbnailURL: []string{thumbnailURL},
-			},
-			)
-		case "jpg", "png", "webp", "heic", "jpeg":
-			item.AddFormats(&models.MediaFormat{
-				Type:     database.MediaTypePhoto,
-				FormatID: formatID,
-				URL:      []string{contentURL},
-			})
-		default:
-			return nil, fmt.Errorf("unknown format: %s", fileExt)
-		}
-	}
-
-	if len(media.Items) == 0 {
-		return nil, fmt.Errorf("no media found")
-	}
-
-	return media, nil
-}
-
-func GetIGramStory(ctx *models.ExtractorContext) (*models.Media, error) {
-	details, err := GetStoryFromIGram(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get story: %w", err)
-	}
-
-	if len(details.Result) == 0 {
-		return nil, util.ErrUnavailable
-	}
-	result := details.Result[0]
-	isVideo := len(result.VideoVersions) > 0
-
-	media := ctx.NewMedia()
-	item := media.NewItem()
-	if isVideo {
-		video := GetBestVideoVersion(result.VideoVersions)
-		item.AddFormats(&models.MediaFormat{
-			FormatID:   "video",
-			Type:       database.MediaTypeVideo,
-			URL:        []string{video.URL},
-			VideoCodec: database.MediaCodecAvc,
-			AudioCodec: database.MediaCodecAac,
-		})
-	} else {
-		image := GetBestCandidate(result.ImageVersions.Candidates)
-		item.AddFormats(&models.MediaFormat{
-			Type:     database.MediaTypePhoto,
-			FormatID: "photo",
-			URL:      []string{image.URL},
-		})
-	}
-
-	if len(media.Items) == 0 {
-		return nil, fmt.Errorf("no media found")
-	}
-
-	return media, nil
-}
-
 func GetRaidenMedia(ctx *models.ExtractorContext) (*models.Media, error) {
 	contentURL := fmt.Sprintf("https://www.instagram.com/p/%s/", ctx.ContentID)
 	if strings.Contains(ctx.ContentURL, "/stories/") {
 		contentURL = strings.Replace(ctx.ContentURL, "ddinstagram.com", "instagram.com", 1)
 	}
 	return raiden.FetchMedia(ctx, raiden.RouteInstagram, contentURL)
-}
-
-func GetPostFromIGram(ctx *models.ExtractorContext) (*IGramResponse, error) {
-	contentURL := "https://www.instagram.com/p/" + ctx.ContentID + "/"
-	apiURL := fmt.Sprintf("https://%s/api/convert", igramHostname)
-	payload, err := IGramBodyFromURL(contentURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to build signed payload: %w", err)
-	}
-
-	headers := map[string]string{
-		"Content-Type": "application/json",
-	}
-	maps.Copy(headers, igramHeaders)
-
-	resp, err := ctx.Fetch(
-		http.MethodPost,
-		apiURL,
-		&networking.RequestParams{
-			Body:    payload,
-			Headers: headers,
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	logger.WriteFile("ig_3party_response", resp)
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get response: %s", resp.Status)
-	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-	response, err := ParseIGramResponse(body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
-	}
-	return response, nil
-}
-
-func GetStoryFromIGram(ctx *models.ExtractorContext) (*IGramStoryResponse, error) {
-	apiURL := fmt.Sprintf("https://%s/api/v1/instagram/story", igramHostname)
-	payload, err := IGramBodyFromParams(map[string]string{
-		"url": ctx.ContentURL,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to build signed payload: %w", err)
-	}
-
-	headers := map[string]string{
-		"Content-Type": "application/json",
-	}
-	maps.Copy(headers, igramHeaders)
-
-	resp, err := ctx.Fetch(
-		http.MethodPost,
-		apiURL,
-		&networking.RequestParams{
-			Body:    payload,
-			Headers: headers,
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	logger.WriteFile("ig_story_3party_response", resp)
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get response: %s", resp.Status)
-	}
-
-	var story IGramStoryResponse
-	decoder := sonic.ConfigFastest.NewDecoder(resp.Body)
-	err = decoder.Decode(&story)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	return &story, nil
 }
 
 func GetYtDlpMedia(ctx *models.ExtractorContext) (*models.Media, error) {
