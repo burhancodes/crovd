@@ -28,10 +28,10 @@ const (
 	// GQL fingerprint constants — update these when Instagram returns 401
 	//go:generate go run ../../../cmd/update-ig-constants
 	gqlDocID        = "8845758582119845"
-	gqlRolloutHash  = "1048004770"
-	gqlBloksVersion = "9887f81ded219a1a7b9abbe1fa856a213108391d81051955946cfc701a0dd354"
+	gqlRolloutHash  = "1048620361"
+	gqlBloksVersion = "62077fc559de123afe03ebeb18194a88ba5d4e6874d9a07873752f3792adb8a0"
 	gqlAsbdID       = "359341"
-	gqlHiddenState  = "20717.HYP:instagram_web_pkg.2.1...0"
+	gqlHiddenState  = "20724.HYP:instagram_web_pkg.2.1...0"
 )
 
 var (
@@ -324,7 +324,7 @@ func BuildGQLData() (map[string]string, map[string]string, error) {
 		domain                = "www"
 		requestID             = "b"
 		clientCapabilityGrade = "EXCELLENT"
-		sessionInternalID     = "7687950117177587889"
+		sessionInternalID     = "7690561775796615298"
 		apiVersion            = "1"
 		appID                 = "936619743392459"
 		loggedIn              = "0"
